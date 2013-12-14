@@ -11,11 +11,11 @@ except:
     import pickle
 
 
-class RandomTree(object):
+class TreePRNG(object):
     """
-    A RandomTree object is a node in a repeatable virtual tree whose leaves
+    A TreePRNG object is a node in a repeatable virtual tree whose leaves
     are pseudorandom number generators (PRNGs).  
-        lotr = RandomTree("The Lord of the Rings")
+        lotr = TreePRNG("The Lord of the Rings")
     Each node can be indexed like a read-only dict of virtually-already-
     existing subnodes:
         orcs = lotr["orcs"]
@@ -27,11 +27,11 @@ class RandomTree(object):
         height = fmr.random() * 2.0 + 3.0
         hair_color = fmr.choice(["brown", "black", "blond", "red"])
     ...in which case it will generate a unique sequence of numbers that 
-    will repeat if you revisit the same path in the tree.  Once a RandomTree
+    will repeat if you revisit the same path in the tree.  Once a TreePRNG
     object has been used as a dict, it will refuse to act as PRNG, and 
     vice-versa.
 
-    Although RandomTree uses a cryptographic hash function to seed the 
+    Although TreePRNG uses a cryptographic hash function to seed the 
     PRNGs, they are not cryptographic PRNGs.
     
     This is an alpha test version.
@@ -52,7 +52,7 @@ class RandomTree(object):
          o  seed is a pickle-able Python object, see pickle_key().
             It's mandatory; the seed() method is disabled.
          o  hashname is one of the names in hashlib.algorithms.
-         o  state is the output of the getstate() of a RandomTree,
+         o  state is the output of the getstate() of a TreePRNG,
             and overrides seed and hashname if given.
         Consider seeding with a combination of
          o  A really-unique application identifier like
@@ -63,10 +63,10 @@ class RandomTree(object):
          o  With multiple threads or processors, unique logical IDs for 
             tasks,  so that saved runs can resume in different situations.
         Something like this:
-            root = RandomTree("com.mydomain.myhost.myname.myapplication")
+            root = TreePRNG("com.mydomain.myhost.myname.myapplication")
             task = root[app_ver][user_id][run_id][task_id]
         
-        Subnodes and leaves are RandomTree instances also.
+        Subnodes and leaves are TreePRNG instances also.
         """
         self.prng = None
         if state:
@@ -84,7 +84,7 @@ class RandomTree(object):
 
     def __getitem__(self, i):
         """
-        Given a RandomTree t,
+        Given a TreePRNG t,
             s = t[i]
         Gives a daughter node of t.  This commits t to be a dict rather 
         than a PRNG, but otherwise doesn't change t.
@@ -96,7 +96,7 @@ class RandomTree(object):
             self.__become_dict()
         new_hash = self.hash.copy()
         new_hash.update(pickle_key(i))
-        return RandomTree(None, state=(new_hash, None, False))
+        return TreePRNG(None, state=(new_hash, None, False))
 
     def __become_prng(self):
         assert not self.is_dict, "Can't be a PRNG--already used as a dict."
@@ -118,7 +118,7 @@ class RandomTree(object):
 
     def getstate(self):
         """
-        Return a tuple that can be used to initialize a new RandomTree.
+        Return a tuple that can be used to initialize a new TreePRNG.
         (Not sure whether this survives across runs of Python.)
         """
         if self.prng:
@@ -127,11 +127,11 @@ class RandomTree(object):
             return (self.hash, None, self.is_dict)
 
     def setstate(self, *args, **kargs):
-        """ Not implemented.  To set the state, create a new RandomTree. """
+        """ Not implemented.  To set the state, create a new TreePRNG. """
         raise NotImplementedError()
 
     def seed(self, *args, **kargs):
-        """ Not implemented.  To seed a PRNG, create a new RandomTree. """
+        """ Not implemented.  To seed a PRNG, create a new TreePRNG. """
         raise NotImplementedError()
 
     def jumpahead(self, *args, **kargs):
@@ -170,7 +170,7 @@ def pickle_key_massage(k):
     Where "embedded" means in a (nested) list or tuple...or just k itself.
     Members of classes we aren't sure of (e.g. sets, dicts) are left alone.
 
-    Note: pickle_key_prep, pickle_key, and RandomTree aren't meant to be
+    Note: pickle_key_prep, pickle_key, and TreePRNG aren't meant to be
     used with large objects as keys.  The cost is the temporary storage, 
     and time while a hash function digests the massaged, pickled object.
     """
