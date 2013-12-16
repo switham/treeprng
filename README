@@ -18,7 +18,7 @@ revisited or resumed without needing to store the generated numbers.
 There are use examples and instructions in the module and class
 docstrings in treeprng.py.  
 
-REQUEST FOR FEEDBACK
+REQUEST FOR FEEDBACK on the wiki: https://github.com/switham/treeprng/wiki
 
 treeprng is in alpha test, meaning I would like feedback about whether
 it is even the right approach, in three senses:  1) is the technical 
