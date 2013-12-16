@@ -84,18 +84,28 @@ access way?
 
 3) USABILITY
 
-The main question is 1) How sensible does the API seem to you?
-There are three further concerns I have: 2) Should the leaves only 
+The main question is A) How sensible does the API seem to you?
+There are three further concerns I have: B) Should the leaves only 
 support a single call to Random rather than being streams?  In that
 case the user would have to keep the index into any virtual stream
 being used.  And also not forget that repeated calls will not 
 produce different outputs.
-3) is the behavior where the object starts out 
+C) is the behavior where the object starts out 
 uncommitted but hardens into either an internal node or a PRNG
-confusing?  4) Will the docstring use suggestions or the API itself 
+confusing?  D) Will the docstring use suggestions or the API itself 
 lead people naturally into any bad practices?
 
-In any case, thanks for your consideration, please send any
-feedback to treeprng@mac-guyver.com .
+In any case, thanks for your consideration.  I invite you to add
+and feedback and discuss on the wiki page:
+    https://github.com/switham/treeprng/wiki
+
+I want you to write and edit there; to do that
+   1) You need a github account (the free account is good):
+      https://github.com/join
+
+   2) Send me a note at (ahem) treeprng at mac-guyver dot com 
+      and I'll make you a "collaborator".
+
+A note by email is fine if you don't have time to wiki.
 
  --Steve,  Dec. 15, 2013
