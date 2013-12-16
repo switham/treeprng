@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 """ 
 Repeatable virtual trees of pseudorandom numbers.  Alpha test version.
-See warnings in RandomTree's docstring below.
+See warnings in TreePRNG's docstring below.
+
+Copyright (c) 2013 Steve Witham.  All rights reserved.  
+treeprng is available under a BSD license, whose full text is at
+    https://github.com/switham/treeprng/blob/master/LICENSE
 """
 
 import hashlib, random
@@ -54,7 +58,7 @@ class TreePRNG(object):
          o  hashname is one of the names in hashlib.algorithms.
          o  state is the output of the getstate() of a TreePRNG,
             and overrides seed and hashname if given.
-        Consider seeding with a combination of
+        Consider seeding with a combination of things like
          o  A really-unique application identifier like
             "com.mydomain.myhost.myname.myapplication".
          o  Application version number.
@@ -110,7 +114,7 @@ class TreePRNG(object):
     def __getattr__(self, attr):
         """
         This handles calls to any random.Random methods by returning the
-        method from the PRNG.
+        method of the PRNG.
         """
         if not self.prng:
             self.__become_prng()
@@ -127,16 +131,16 @@ class TreePRNG(object):
             return (self.hash, None, self.is_dict)
 
     def setstate(self, *args, **kargs):
-        """ Not implemented.  To set the state, create a new TreePRNG. """
+        """ Disabled.  To set the state, create a new TreePRNG. """
         raise NotImplementedError()
 
     def seed(self, *args, **kargs):
-        """ Not implemented.  To seed a PRNG, create a new TreePRNG. """
+        """ Disabled.  To seed a PRNG, create a new TreePRNG. """
         raise NotImplementedError()
 
     def jumpahead(self, *args, **kargs):
         """ 
-        Not implemented.  For multiple random sequences under one node, do:
+        Disabled.  For multiple random sequences under one node, do:
         prng1 = node[id_1]
          prng2 = node[id_2]
         ...
@@ -148,7 +152,7 @@ class TreePRNG(object):
 def pickle_key(k):
     """
     Create an input string for a secure hash, using pickle.
-    Basic types convert in a repeatable way with this method:
+    These basic types convert in a repeatable way with this method:
         None, False, True
         string, unicode string
         float, long, int
@@ -163,24 +167,25 @@ def pickle_key(k):
 def pickle_key_massage(k):
     """
     Return (a possibly massaged copy of) input for pickle_key to make sure
-    "equal things are equal".
-    So far this means: 
+    "equal things are equal".  So far this means: 
         An embedded float is converted to an equal long or int if possible.
         An embedded long is converted to an equal int if possible.
     Where "embedded" means in a (nested) list or tuple...or just k itself.
     Members of classes we aren't sure of (e.g. sets, dicts) are left alone.
 
-    Note: pickle_key_prep, pickle_key, and TreePRNG aren't meant to be
-    used with large objects as keys.  The cost is the temporary storage, 
-    and time while a hash function digests the massaged, pickled object.
+    Note: pickle_key_massage, pickle_key, and TreePRNG aren't meant to be
+    used with large objects as keys.  The hash can only absorb a certain
+    amount of, um, pseudo-entropy.  But the cost is only storage (of both 
+    the massaged and picked versions) which is recovered immediately, and 
+    time (while the hash digests the pickle).
     """
-    if type(k) == list:  # Not isinstance -- don't touch subclasses.
+    if type(k) == list:  # Note isinstance -- don't massage subclasses.
         for i, x in enumerate(k):
             y = pickle_key_massage(x)
             if y is not x:
                 k = k[:i] + [y] + [pickle_key_massage(z) for z in k[i+1:]]
                 break
-    elif type(k) == tuple:  # Not isinstance -- don't touch subclasses.
+    elif type(k) == tuple:  # Not isinstance -- don't massage subclasses.
         for i, x in enumerate(k):
             y = pickle_key_massage(x)
             if y is not x:
