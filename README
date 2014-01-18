@@ -9,16 +9,15 @@ treeprng is available under a BSD license, whose full text is at
 Steve Witham <treeprng@mac-guyver.com>
 
 
-    UPDATING: this is the beginning of the no_mersenne branch,
-    it's already set to the default branch,
+    UPDATING: This is the beginning of the no_mersenne branch.
+    I've already set no_mersenne to the default branch,
     but I'm in the process of making the first code change
-    since the branch point.  To see the most recent Mersenne Twister
-    based code, switch to the mersenne branch.
+    since the branch point.
 
     The standard Python prng is based on the Mersenne Twister,
     but it turns out the Python version seeds it using a SHA-512
     hash, which is even more work than the SHA-1 (160 bits) that
-    I'm using as default here.  Also, my intended use pattern uses
+    I'm using as default here.  Also, my intended use pattern is
     lots of "seeds" and not builtin stateful sequences.  So the plan
     is to cut out the middleman.
 
@@ -26,6 +25,7 @@ Steve Witham <treeprng@mac-guyver.com>
     Twister, if you'd like to try that.  Be aware if you do that it 
     generates different numbers than this branch will, for given paths, 
     and that the API is changing slightly.
+
 
 The treeprng.TreePRNG class creates nodes for "visiting" a virtually-
 already-existing tree of nodes and random number generators, for use 
