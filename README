@@ -18,9 +18,9 @@ revisited or resumed without needing to store the generated numbers.
 There are use examples and instructions in the module and class
 docstrings in treeprng.py.  
 
-REQUEST FOR FEEDBACK on the wiki: https://github.com/switham/treeprng/wiki
+I'D APPRECIATE FEEDBACK at https://github.com/switham/treeprng/wiki
 
-treeprng is in alpha test, meaning I would like feedback about whether
+treeprng is "in alpha", meaning I would like feedback about whether
 it is even the right approach, in three senses:  1) is the technical 
 method suitably pseudorandom?  2) Reasonably efficient?  3) are the
 API and usage pattern I suggest in the docstrings a good model?
@@ -30,7 +30,7 @@ below), perhaps try it out, and let me know how you think treprng
 measures on those three scales.
 
 0) (okay another) Do you see the goal I'm aiming at, do you agree it's
-tricky enough to do right that it deserves a standard method?
+tricky enough to do right that it deserves a canonical method?
 
 1) PSEUDORANDOMNESS
 
@@ -47,14 +47,19 @@ and its PRNG streams are just functions of the access paths.  To put
 it differently, it's a way of seeding a PRNG with an arbitrarily-long
 path.
 
-This is literally true: the seed and keys down a path are serialized
-and processed through hashlib.sha1 to produce a 160-bit seed for Random's 
-Mersenne Twister PRNG.
+Which is literally how the implementation works: the seed and keys down a 
+path are serialized and processed through hashlib.sha1 to produce a 
+160-bit seed for Random's Mersenne Twister PRNG.  
 
 Each TreePRNG node contains a fixed-size unchanging state of SHA1.  
 Whenever you move to a subnode, the state is copied and the copy 
 is updated with the serialized step key.  Then the parent node object 
-can be discarded and garbage-collected if not needed.
+can be discarded and garbage-collected if not still needed.  (There is
+no ".." path to get back to the parent, though, one can only start at
+the root and go down.)
+
+A TreePRNG object is somewhere between a "current directory" and an 
+"open file."
 
 generative algorithms, problem-solving algorithms, Monte Carlo methods, 
 and genetic algorithms can all feed back on themselves.  If they feed 
@@ -62,18 +67,29 @@ back through this module, and there are resonances, cycles,
 or attractors in the combination, they may find attractors and get 
 unrandom numbers from the module.  This looks like a harder problem
 than just producing good pseudorandomness in a stream; the issue is
-something like "accidental cryptanalysis."  I'm not sure how to
-characterize the problem.  At this point I'm not looking for a PRNG
-to resist deliberate cracking attempts, just to behave in a random-
-like way in the face of feedback situations.  To me, the problem 
-seems hard enough that it makes sense to use crypto components
-that already solve the issues I see.  Is that smart?
+something like "accidental cryptanalysis."  Note that while a cypher
+with known statistical patterns wouldn't necessarily broken (yet), a
+PRNG would.
 
-As an example: an earlier approach of mine was to generate subtree
-seeds out of the PRNG output from the parent node.  Even if
-the parent were a huge random one-time pad, this would reduce its 
-cycle time (taking any repeating step pattern down the tree)
-to around a square root of what it was.  Right?
+I'm not trying to resist deliberate cracking attempts, but I'm not
+sure whether I can identify a weaker, yet good enough standard of
+randomyness.  Here's a try:
+
+Assuming the initial seed is "long and random enough," and that the
+application has no direct access to that or the internal state of 
+TreePRNG.  It should be a hard-enough problem to find two long 
+sequences in different locations of the tree with a much-less-likely-
+than-chance relationship.  Or to find many pairs, the sum of whose 
+relationship-unlikelyness adds up to very unlikely.
+
+(Although there are added processes at both the input and output of
+SHA-1 in TreePRNG, maybe I shouldn't use SHA-1.)
+
+An example of a too-obvious non-randomness: suppose the step-down 
+function used 64 bits of output from one PRNG to seed another PRNG.  
+Even if the PRNG seeding process were a 2**64-entry truly-random 
+lookup table, the expected cycle length of this feedback method, and 
+the time to discover it, is only 2**32.
 
 2) EFFICIENCY
 
@@ -90,22 +106,24 @@ support a single call to Random rather than being streams?  In that
 case the user would have to keep the index into any virtual stream
 being used.  And also not forget that repeated calls will not 
 produce different outputs.
-C) is the behavior where the object starts out 
-uncommitted but hardens into either an internal node or a PRNG
-confusing?  D) Will the docstring use suggestions or the API itself 
-lead people naturally into any bad practices?
+C) is the behavior where the object starts out uncommitted but hardens 
+into either an internal node or a PRNG confusing?  UnPythonic?  
+D) Will the docstring use suggestions or the API itself lead people 
+naturally into any bad practices?  Is a set of pitfalls inevitable
+and just needs to be documented in red type?
 
-In any case, thanks for your consideration.  I invite you to add
-and feedback and discuss on the wiki page:
+In any case, thanks for your consideration.  For discussion take a
+look at:
     https://github.com/switham/treeprng/wiki
 
-I want you to write and edit there; to do that
+If you'd like to participate there,
    1) You need a github account (the free account is good):
       https://github.com/join
 
    2) Send me a note at (ahem) treeprng at mac-guyver dot com 
       and I'll make you a "collaborator".
 
-A note by email is fine if you don't have time to wiki.
+If that's too involved but you still would like to comment,
+   treeprng at mac-guyver dot com .
 
  --Steve,  Dec. 15, 2013

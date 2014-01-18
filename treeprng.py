@@ -142,7 +142,7 @@ class TreePRNG(object):
         """ 
         Disabled.  For multiple random sequences under one node, do:
         prng1 = node[id_1]
-         prng2 = node[id_2]
+        prng2 = node[id_2]
         ...
         With a unique id for each sequence.
         """
@@ -179,13 +179,13 @@ def pickle_key_massage(k):
     the massaged and picked versions) which is recovered immediately, and 
     time (while the hash digests the pickle).
     """
-    if type(k) == list:  # Note isinstance -- don't massage subclasses.
+    if type(k) == list:  # ==, not isinstance -- don't massage subclasses.
         for i, x in enumerate(k):
             y = pickle_key_massage(x)
             if y is not x:
                 k = k[:i] + [y] + [pickle_key_massage(z) for z in k[i+1:]]
                 break
-    elif type(k) == tuple:  # Not isinstance -- don't massage subclasses.
+    elif type(k) == tuple:  # ==, not isinstance -- don't massage subclasses.
         for i, x in enumerate(k):
             y = pickle_key_massage(x)
             if y is not x:
