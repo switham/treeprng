@@ -22,6 +22,11 @@ Steve Witham <treeprng@mac-guyver.com>
     lots of "seeds" and not builtin stateful sequences.  So the plan
     is to cut out the middleman.
 
+    There is a mersenne branch with stable code based on the Mersenne
+    Twister, if you'd like to try that.  Be aware if you do that it 
+    generates different numbers than this branch will, for given paths, 
+    and that the API is changing slightly.
+
 The treeprng.TreePRNG class creates nodes for "visiting" a virtually-
 already-existing tree of nodes and random number generators, for use 
 in virtual game worlds, software testing and Monte Carlo simulations,
