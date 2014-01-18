@@ -8,6 +8,14 @@ treeprng is available under a BSD license, whose full text is at
 
 Steve Witham <treeprng@mac-guyver.com>
 
+    BEING DEPRECATED.  This is the "mersenne" branch.  It uses Python's
+    built-in Mersenne Twister based PRNG.  I have created the 
+    no_mersenne branch and made no_mersenne the default branch (HEAD).
+    The actual API (or at least it's behavior) and certainly the
+    random numbers that come out for given paths, will change.
+    But, this branch is in a working, stable state if you would
+    like to try it.
+
 The treeprng.TreePRNG class creates nodes for "visiting" a virtually-
 already-existing tree of nodes and random number generators, for use 
 in virtual game worlds, software testing and Monte Carlo simulations,
