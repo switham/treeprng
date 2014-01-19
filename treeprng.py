@@ -29,10 +29,9 @@ def lifecycle():
     TreePRNG instances have a LIFE CYCLE with THREE STATES:
     "uncommitted," "dict," and "spent."
     
-    A TreePRNG is created in an uncommitted state.
-    If you use it like a directory or Python dict, it bears a child,
-    a new TreePRNG.  The child is uncommitted, but the parent goes into
-    the dict state, committed to only bearing children from now on.
+    A TreePRNG is created in an uncommitted state.  If you use it like a 
+    Python dict, it returns a new TreePRNG.  The child is uncommitted, 
+    but the parent becomes committed to being a dict of TreePRNGs.
     
     If you use an uncommitted TreePRNG by calling one of the methods of
     the Python random.Random class (e.g. .random(), .choice(), 
@@ -41,18 +40,20 @@ def lifecycle():
 
     If you call the .sequence() method, it returns a seeded instance of
     (a subclass of) the random.Random class, which you can use as long
-    as you like.  But, the TreePrng object goes into the spent state.
+    as you like.  But the TreePRNG object goes into the spent state.
 
-    WHY??
+    WHY THE DICT AND SPENT STATES?
 
     To try to catch code that tries to use the same set of random numbers 
     for two different purposes, by mistake.  Or would get different results
     by asking for the same numbers, but in different order.  Here is how to
     use TreePRNG correctly:
 
-    The simple way is to give a different address, a different path, to
+    The simple way is to give a different address (path of dict keys) to
     every single random number (actually, to every Random method call).
-    Hopefully this use-pattern will seem natural.  So this works:
+    Hopefully this use-pattern will seem natural.  So after setting up...
+        frodo = TreePRNG("Lord of the Rings")["hobbits"]["Frodo"]
+    ...this works:
         frodo_hair = frodo["hair"].choice(["brown", "black", "blond", "red"])
         frodo_height = frodo["height"].random() * 2.0 + 3.0
     ...and gives the same results as:
@@ -63,8 +64,8 @@ def lifecycle():
         frodo_height = frodo.random() * 2.0 + 3.0
 
     Lists of (e.g.) numbers can be generated this way:
-        f_ns_node = frodo["nums"]
-        frodo_nums = [f_ns[i].random() for i in range(13)]
+        f_ns_dict = frodo["nums"]
+        frodo_nums = [f_ns_dict[i].random() for i in range(13)]
 
     Giving everything an address minimizes the chance of accidental reuse 
     and helps keep things stable in the face of code changes.  But there 
@@ -73,7 +74,6 @@ def lifecycle():
         f_ns_prng = frodo["nums"].sequence()
         frodo_nums = [f_ns_prng.random() for i in range(13)]
     """
-    help(lifecycle)
     
 
 class TreePRNG(object):
@@ -98,8 +98,8 @@ class TreePRNG(object):
     space, and never find evidence that the numbers aren't independently 
     random everywhere.
     
-    TreePRNG instances have a LIFE CYCLE with THREE STATES.
-    It's important; see help(treeprng.lifecycle) or help(TreePRNG.lifecycle).
+    IMPORTANT: TreePRNG instances have a LIFE CYCLE with THREE STATES.
+    See help(treeprng.lifecycle) or help(TreePRNG.lifecycle).
 
     QUICK START
         lotr = TreePRNG("The Lord of the Rings")
@@ -149,7 +149,7 @@ class TreePRNG(object):
 
     def lifecycle(self):
         """ (lifecycle help gets inserted here.) """
-        help(lifecycle)
+        pass
 
     lifecycle.__doc__ = globals()["lifecycle"].__doc__
 
