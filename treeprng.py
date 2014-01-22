@@ -1,21 +1,14 @@
 #!/usr/bin/env python
 """ 
 Repeatable virtual trees of pseudorandom numbers.  Alpha test version.
-    1) Until the internal representations are settled, different versions of
-       this module will produce different random numbers for the same
-       tree paths.
-    2) It's not especially fast.  subnode = node["key"] involves a hashlib 
-       update(), and generating a random number generally involves a hashlib 
-       digest().
-    3) It may be too easy to find sequences repeated in different locations.
-       (Using unbroken hashes (not the default sha1), I think it should take
-       about 2**(nbits/2) probes to find a repeat, where nbits is the
-       number of bits in the hash digest type used.)
 
-Copyright (c) 2013-2014 Steve Witham.  All rights reserved.  
-treeprng is available under a BSD license, whose full text is at
-    https://github.com/switham/treeprng/blob/master/LICENSE
+https://github.com/switham/treeprng/wiki/Documentation
+https://github.com/switham/treeprng/wiki/Critique
 """
+
+# Copyright (c) 2013-2014 Steve Witham.  All rights reserved.  
+# treeprng is available under a BSD license, whose full text is at
+#   https://github.com/switham/treeprng/blob/master/LICENSE
 
 import hashlib, random
 try:
@@ -24,134 +17,23 @@ except:
     import pickle
 
 
-def lifecycle():
-    """    
-    TreePRNG instances have a LIFE CYCLE with THREE STATES:
-    "uncommitted," "dict," and "spent."
-    
-    A TreePRNG is created in an uncommitted state.  If you use it like a 
-    Python dict, it returns a new TreePRNG.  The child is uncommitted, 
-    but the parent becomes committed to being a dict of TreePRNGs.
-    
-    If you use an uncommitted TreePRNG by calling one of the methods of
-    the Python random.Random class (e.g. .random(), .choice(), 
-    .shuffle()...), it does what you would expect that method to do, and 
-    then goes into the spent state, where it won't do anything else.
-
-    If you call the .sequence() method, it returns a seeded instance of
-    (a subclass of) the random.Random class, which you can use as long
-    as you like.  But the TreePRNG object goes into the spent state.
-
-    WHY THE DICT AND SPENT STATES?
-
-    To try to catch code that tries to use the same set of random numbers 
-    for two different purposes, by mistake.  Or would get different results
-    by asking for the same numbers, but in different order.  Here is how to
-    use TreePRNG correctly:
-
-    The simple way is to give a different address (path of dict keys) to
-    every single random number (actually, to every Random method call).
-    Hopefully this use-pattern will seem natural.  So after setting up...
-        frodo = TreePRNG("Lord of the Rings")["hobbits"]["Frodo"]
-    ...this works:
-        frodo_hair = frodo["hair"].choice(["brown", "black", "blond", "red"])
-        frodo_height = frodo["height"].random() * 2.0 + 3.0
-    ...and gives the same results as:
-        frodo_height = frodo["height"].random() * 2.0 + 3.0
-        frodo_hair = frodo["hair"].choice(["brown", "black", "blond", "red"])
-    ...but this DOES NOT WORK and raises an exception:
-        frodo_hair = frodo.choice(["brown", "black", "blond", "red"])
-        frodo_height = frodo.random() * 2.0 + 3.0
-
-    Lists of (e.g.) numbers can be generated this way:
-        f_ns_dict = frodo["nums"]
-        frodo_nums = [f_ns_dict[i].random() for i in range(13)]
-
-    Giving everything an address minimizes the chance of accidental reuse 
-    and helps keep things stable in the face of code changes.  But there 
-    may be times when you Know What You're Doing and you really want an 
-    old-fashioned stateful random number generator.  In that case,
-        f_ns_prng = frodo["nums"].sequence()
-        frodo_nums = [f_ns_prng.random() for i in range(13)]
-    """
-    
-
 class TreePRNG(object):
     """
-    A TreePRNG object can be thought of as, virtually,
-     o  an infinite subset of an infinite random universe.
-     o  an unlimited-width and -depth subtree within the infinitely wide 
-        and deep directory tree of an infinite hard disk of random data.
-     o  a nested Python dictionary within a nested dictionary of randomness.
-     o  a partial or complete, unlimited "size" seed for a pseudorandom 
-        number generator (which nevertheless uses only a fixed amount of
-        memory).
-    
-    By virtual, we mean that the source of numbers is actually of finite
-    (though astronomical) size, and pseudorandom, not truly random. 
-
-    This source of random numbers is read-only.  It is always the same for
-    everyone, and static in every location of the tree.  You access 
-    different data by addressing different locations within it.  The access 
-    paths are truly not limited, and the intent is that programs that take 
-    reasonable care can range as far and wide as they like within the 
-    space, and never find evidence that the numbers aren't independently 
-    random everywhere.
-    
-    IMPORTANT: TreePRNG instances have a LIFE CYCLE with THREE STATES.
-    See help(treeprng.lifecycle) or help(TreePRNG.lifecycle).
-
-    QUICK START
-        lotr = TreePRNG("The Lord of the Rings")
-        hobbits = lotr["hobbits"]
-        frodo = hobbits["frodo"]
-        frodo_height = frodo["height"].random() * 2.0 + 3.0
-        frodo_hair = frodo["hair"].choice(["brown", "black", "blond", "red"])
-
-    Although TreePRNG uses a cryptographic hash function to seed the 
-    PRNGs, they are not cryptographic PRNGs.
+    A TreePRNG object is a virtual tree of nested Python dicts,
+    with pseudorandom numbers at the bottom.  See the user guide:
+        https://github.com/switham/treeprng/wiki/Documentation
     """
-    def __init__(self, seed, hashname="sha1", state=None):
+    def __init__(self, hashname="sha1"):
         """
-        Produce the top node of a tree in an uncommitted state.
-         o  seed is a pickle-able Python object, see pickle_key().
-            It's mandatory; the seed() method is disabled.
+        Produce the root of a tree in a "dict" state.
          o  hashname is one of the names in hashlib.algorithms.
-         o  state is the output of the getstate() of a TreePRNG,
-            and overrides seed and hashname if given.
-        Consider seeding with a combination of things like
-         o  A really-unique application identifier like
-            "com.mydomain.myhost.myname.myapplication".
-         o  Application version number.
-         o  ID of the user unique across all users of the application.
-         o  Unique run id that can be used to recreate/revisit/resume a run.
-         o  With multiple threads or processors, unique logical IDs for 
-            tasks,  so that saved runs can resume in different situations.
-        Something like this:
-            root = TreePRNG("com.mydomain.myhost.myname.myapplication")
-            task = root[app_ver][user_id][run_id][task_id]
 
         Subnodes are TreePRNG instances also.
         """
         self.prng = None
-        if state:
-            self.hash, prng_state, self.is_dict = state
-            if prng_state:
-                self.__become_prng()
-                self.prng.setstate(prng_state)
-            if self.is_dict:
-                self.__become_dict()
-        else:
-            self.hash = hashlib.new(hashname)
-            self.hash.update(pickle_key(seed))
-            self.prng = None
-            self.is_dict = False
-
-    def lifecycle(self):
-        """ (lifecycle help gets inserted here.) """
-        pass
-
-    lifecycle.__doc__ = globals()["lifecycle"].__doc__
+        self.hash = hashlib.new(hashname)
+        self.prng = None
+        self.is_dict = True # The root is always a dict.
 
     def __getitem__(self, i):
         """

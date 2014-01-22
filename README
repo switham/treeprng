@@ -1,18 +1,26 @@
-treeprng alpha-test version README
+treeprng no_mersenne branch alpha-test version README
 
-Repeatable virtual trees of pseudorandom number generators.
+Repeatable virtual trees of pseudorandom numbers.
 
-Copyright (c) 2013 Steve Witham.  All rights reserved.  
+Documentation and commentary here:
+    https://github.com/switham/treeprng/wiki
+
+Copyright (c) 2013-2014 Steve Witham.  All rights reserved.  
 treeprng is available under a BSD license, whose full text is at
     https://github.com/switham/treeprng/blob/master/LICENSE
 
 Steve Witham <treeprng@mac-guyver.com>
 
-
     UPDATING: This is the beginning of the no_mersenne branch.
     I've already set no_mersenne to the default branch,
     but I'm in the process of making the first code change
     since the branch point.
+
+    CURRENT STATE: The Wiki has been updated to include a pretty
+    good user guide to what-I'm-going-to-implement:
+        https://github.com/switham/treeprng/wiki
+    The code needs to catch up, and the docstrings need to be
+    corrected and simplified now.
 
     The standard Python prng is based on the Mersenne Twister,
     but it turns out the Python version seeds it using a SHA-512
@@ -26,123 +34,12 @@ Steve Witham <treeprng@mac-guyver.com>
     generates different numbers than this branch will, for given paths, 
     and that the API is changing slightly.
 
+treeprng is "in alpha", meaning I would like feedback about the
+whole approach, the specific implementation, and its documentation.
+Existing comments and information about commenting are here:
+    https://github.com/switham/treeprng/wiki/Critique
 
-The treeprng.TreePRNG class creates nodes for "visiting" a virtually-
-already-existing tree of nodes and random number generators, for use 
-in virtual game worlds, software testing and Monte Carlo simulations,
-distributed algorithms, and any application where you need parallel,
-drill-downable sources of random numbers that can be repeated, 
-revisited or resumed without needing to store the generated numbers.
-
-There are use examples and instructions in the module and class
-docstrings in treeprng.py.  
-
-I'D APPRECIATE FEEDBACK at https://github.com/switham/treeprng/wiki
-
-treeprng is "in alpha", meaning I would like feedback about whether
-it is even the right approach, in three senses:  1) is the technical 
-method suitably pseudorandom?  2) Reasonably efficient?  3) are the
-API and usage pattern I suggest in the docstrings a good model?
-
-Please read the docstrings, read the technical blurb (immediately
-below), perhaps try it out, and let me know how you think treprng
-measures on those three scales.
-
-0) (okay another) Do you see the goal I'm aiming at, do you agree it's
-tricky enough to do right that it deserves a canonical method?
-
-1) PSEUDORANDOMNESS
-
-node = TreePRNG(seed) creates the root node (or node visitor perhaps)
-for an imaginary tree keyed by the seed.  From that (or any) node you 
-can step down to a subnode with subnode = node[step_key], creating
-another TreePRNG instance.  At any point where you want random 
-numbers, you can use one of the Python random.Random methods.  If
-you exit the program, come back the next day, start with the same seed, 
-walk the same path and call the same Random method, you will get 
-the same result.  The TreePRNG objects just remember *where* you are
-in the tree (once in PRNG mode they remember PRNG state); the tree
-and its PRNG streams are just functions of the access paths.  To put
-it differently, it's a way of seeding a PRNG with an arbitrarily-long
-path.
-
-Which is literally how the implementation works: the seed and keys down a 
-path are serialized and processed through hashlib.sha1 to produce a 
-160-bit seed for Random's Mersenne Twister PRNG.  
-
-Each TreePRNG node contains a fixed-size unchanging state of SHA1.  
-Whenever you move to a subnode, the state is copied and the copy 
-is updated with the serialized step key.  Then the parent node object 
-can be discarded and garbage-collected if not still needed.  (There is
-no ".." path to get back to the parent, though, one can only start at
-the root and go down.)
-
-A TreePRNG object is somewhere between a "current directory" and an 
-"open file."
-
-generative algorithms, problem-solving algorithms, Monte Carlo methods, 
-and genetic algorithms can all feed back on themselves.  If they feed 
-back through this module, and there are resonances, cycles,
-or attractors in the combination, they may find attractors and get 
-unrandom numbers from the module.  This looks like a harder problem
-than just producing good pseudorandomness in a stream; the issue is
-something like "accidental cryptanalysis."  Note that while a cypher
-with known statistical patterns wouldn't necessarily broken (yet), a
-PRNG would.
-
-I'm not trying to resist deliberate cracking attempts, but I'm not
-sure whether I can identify a weaker, yet good enough standard of
-randomyness.  Here's a try:
-
-Assuming the initial seed is "long and random enough," and that the
-application has no direct access to that or the internal state of 
-TreePRNG.  It should be a hard-enough problem to find two long 
-sequences in different locations of the tree with a much-less-likely-
-than-chance relationship.  Or to find many pairs, the sum of whose 
-relationship-unlikelyness adds up to very unlikely.
-
-(Although there are added processes at both the input and output of
-SHA-1 in TreePRNG, maybe I shouldn't use SHA-1.)
-
-An example of a too-obvious non-randomness: suppose the step-down 
-function used 64 bits of output from one PRNG to seed another PRNG.  
-Even if the PRNG seeding process were a 2**64-entry truly-random 
-lookup table, the expected cycle length of this feedback method, and 
-the time to discover it, is only 2**32.
-
-2) EFFICIENCY
-
-Given the goal, is this method, which runs a hash digest to seed each
-leaf of the tree, about as efficient as I can expect?  Will the time
-cost encourage users to avoid using the tree in its intended random-
-access way?
-
-3) USABILITY
-
-The main question is A) How sensible does the API seem to you?
-There are three further concerns I have: B) Should the leaves only 
-support a single call to Random rather than being streams?  In that
-case the user would have to keep the index into any virtual stream
-being used.  And also not forget that repeated calls will not 
-produce different outputs.
-C) is the behavior where the object starts out uncommitted but hardens 
-into either an internal node or a PRNG confusing?  UnPythonic?  
-D) Will the docstring use suggestions or the API itself lead people 
-naturally into any bad practices?  Is a set of pitfalls inevitable
-and just needs to be documented in red type?
-
-In any case, thanks for your consideration.  For discussion take a
-look at:
-    https://github.com/switham/treeprng/wiki
-
-If you'd like to participate there,
-   1) You need a github account (the free account is good):
-      https://github.com/join
-
-   2) Send me a note at (ahem) treeprng at mac-guyver dot com 
-      and I'll make you a "collaborator".
-
-If that's too involved but you still would like to comment,
+In any case if you would like to comment or say hi,
    treeprng at mac-guyver dot com .
 
- --Steve,  Dec. 15, 2013
+ --Steve,  Jan. 21, 2014
