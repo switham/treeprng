@@ -15,7 +15,7 @@ try:
     import cPickle as pickle
 except:
     import pickle
-
+import copy
 
 class TreePRNG(object):
     """
@@ -47,9 +47,11 @@ class TreePRNG(object):
         assert not self.prng, "Can't be a dict--already used as a PRNG."
         if not self.is_dict:
             self.__become_dict()
-        new_hash = self.hash.copy()
-        new_hash.update(pickle_key(i))
-        return TreePRNG(None, state=(new_hash, None, False))
+        child = copy.copy(self)
+        child.hash = self.hash.copy()
+        child.is_dict = False
+        child.hash.update(pickle_key(i))
+        return child
 
     def __become_prng(self):
         assert not self.is_dict, "Can't be a PRNG--already used as a dict."
