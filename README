@@ -1,4 +1,5 @@
-treeprng no_mersenne branch alpha-test version README
+treeprng README
+no_mersenne branch, alpha-test version 
 
 Repeatable virtual trees of pseudorandom numbers.
 
@@ -9,18 +10,18 @@ Copyright (c) 2013-2014 Steve Witham.  All rights reserved.
 treeprng is available under a BSD license, whose full text is at
     https://github.com/switham/treeprng/blob/master/LICENSE
 
-Steve Witham <treeprng@mac-guyver.com>
+    NEW BRANCH CURRENT STATE: The Wiki has been updated to include 
+    a pretty good guide to how this version will work:
 
-    UPDATING: This is the beginning of the no_mersenne branch.
-    I've already set no_mersenne to the default branch,
-    but I'm in the process of making the first code change
-    since the branch point.
-
-    CURRENT STATE: The Wiki has been updated to include a pretty
-    good user guide to what-I'm-going-to-implement:
         https://github.com/switham/treeprng/wiki
+
     The code needs to catch up, and the docstrings need to be
     corrected and simplified now.
+
+    BEING UPDATED: This is the beginning of the no_mersenne branch.
+    I've already set no_mersenne to the default branch,
+    but I'm in the process of making the first code changes
+    since the branch point.
 
     The standard Python prng is based on the Mersenne Twister,
     but it turns out the Python version seeds it using a SHA-512
@@ -35,11 +36,11 @@ Steve Witham <treeprng@mac-guyver.com>
     and that the API is changing slightly.
 
 treeprng is "in alpha", meaning I would like feedback about the
-whole approach, the specific implementation, and its documentation.
+whole approach, the specific implementation, and the documentation.
 Existing comments and information about commenting are here:
     https://github.com/switham/treeprng/wiki/Critique
 
-In any case if you would like to comment or say hi,
-   treeprng at mac-guyver dot com .
+In any case if you would like to comment or say hi, I'm
+   Steve Witham <treeprng at mac-guyver dot com>
 
- --Steve,  Jan. 21, 2014
+Jan. 22, 2014
