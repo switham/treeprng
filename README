@@ -10,30 +10,9 @@ Copyright (c) 2013-2014 Steve Witham.  All rights reserved.
 treeprng is available under a BSD license, whose full text is at
     https://github.com/switham/treeprng/blob/master/LICENSE
 
-    NEW BRANCH CURRENT STATE: The Wiki has been updated to include 
-    a pretty good guide to how this version will work:
-
-        https://github.com/switham/treeprng/wiki
-
-    The code needs to catch up, and the docstrings need to be
-    corrected and simplified now.
-
-    BEING UPDATED: This is the beginning of the no_mersenne branch.
-    I've already set no_mersenne to the default branch,
-    but I'm in the process of making the first code changes
-    since the branch point.
-
-    The standard Python prng is based on the Mersenne Twister,
-    but it turns out the Python version seeds it using a SHA-512
-    hash, which is even more work than the SHA-1 (160 bits) that
-    I'm using as default here.  Also, my intended use pattern is
-    lots of "seeds" and not builtin stateful sequences.  So the plan
-    is to cut out the middleman.
-
-    There is a mersenne branch with stable code based on the Mersenne
-    Twister, if you'd like to try that.  Be aware if you do that it 
-    generates different numbers than this branch will, for given paths, 
-    and that the API is changing slightly.
+CURRENT STATUS:
+    2014-01-22: The code in the new no_mersenne branch seems to work.
+                The documentation in the wiki is pretty good.
 
 treeprng is "in alpha", meaning I would like feedback about the
 whole approach, the specific implementation, and the documentation.

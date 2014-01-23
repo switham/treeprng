@@ -17,69 +17,85 @@ except:
     import pickle
 import copy
 
+TREEPRNG_DOC_URL = "https://github.com/switham/treeprng/wiki/Documentation"
+
+
 class TreePRNG(object):
     """
-    A TreePRNG object is a virtual tree of nested Python dicts,
-    with pseudorandom numbers at the bottom.  See the user guide:
+    A virtual tree of nested Python dicts with pseudorandom numbers 
+    at the bottom.  See the user guide:
         https://github.com/switham/treeprng/wiki/Documentation
     """
-    def __init__(self, hashname="sha1"):
+
+    def __init__(self, hashname="sha1", sequence_class=None):
         """
         Produce the root of a tree in a "dict" state.
-         o  hashname is one of the names in hashlib.algorithms.
-
-        Subnodes are TreePRNG instances also.
+        hashname is one of the names in hashlib.algorithms.
+        sequence_class is (a subclass of) random.Random that sets the 
+        type of PRNG returned by .sequence().
+            The default is treeprng.Hash_PRNG using hashname.
         """
-        self.prng = None
+        self.hashname = hashname
+        self.sequence_class = sequence_class
         self.hash = hashlib.new(hashname)
-        self.prng = None
         self.is_dict = True # The root is always a dict.
 
-    def __getitem__(self, i):
+    def __getitem__(self, key):
         """
         Given a TreePRNG t,
-            s = t[i]
-        Gives a daughter node of t.  This commits t to be a dict rather 
-        than a PRNG, but otherwise doesn't change t.
-        i can be any picklable object, but if you want repeatability 
+            t[key]
+        Creates an uncommitted daughter TreePRNG object.
+        This commits t to be a dict, but otherwise doesn't change t.
+        key can be any picklable object, but if you want repeatability 
         across runs of a program, see help(pickle_key).
         """
-        assert not self.prng, "Can't be a dict--already used as a PRNG."
-        if not self.is_dict:
-            self.__become_dict()
+        assert self.hash, \
+            "Tried to use as a dict after spent. See:\n" \
+            + TREEPRNG_DOC_URL + "#the-treeprng-life-cycle"
+        self.is_dict = True
+        
         child = copy.copy(self)
         child.hash = self.hash.copy()
         child.is_dict = False
-        child.hash.update(pickle_key(i))
+        child.hash.update("k" + pickle_key(key))
         return child
 
-    def __become_prng(self):
-        assert not self.is_dict, "Can't be a PRNG--already used as a dict."
-        self.prng = random.Random(long(self.hash.hexdigest(), 16))
-        self.hash = None
+    def __check_state(self, method):
+        assert self.hash, \
+            "Tried to use ." + method + "() after spent. See:\n" \
+            + TREEPRNG_DOC_URL + "#the-treeprng-life-cycle"
+        assert not self.is_dict, \
+            "Tried to use ." + method + "() after use as a dict. See:\n" \
+            + TREEPRNG_DOC_URL + "#the-treeprng-life-cycle"
 
-    def __become_dict(self):
-        assert not self.prng, "Can't be a dict--already used as a PRNG."
-        self.is_dict = True
+    def sequence(self, prng_class=None):
+        """
+        Return a PRNG seeded from this TreePRNG object.
+        prng_class is an optional random.Random subclass; the default is
+        self.sequence_class  (see __init__()).   self becomes spent.
+        """
+        self.__check_state("sequence")
+        seed = long(self.hash.hexdigest(), 16)
+        self.hash = None  # Spent.
+        prng_class = prng_class or self.sequence_class
+        if prng_class:
+            return prng_class(seed)
+        else:
+            return Hash_PRNG(seed, hashname=self.hashname)
 
-    def __getattr__(self, attr):
+    def __getattr__(self, method):
         """
         This handles calls to any random.Random methods by returning the
-        method of the PRNG.
+        method of the PRNG.  Then self becomes spent.
         """
-        if not self.prng:
-            self.__become_prng()
-        return getattr(self.prng, attr)
+        self.__check_state(method)
+        prng = Hash_PRNG(self.hash, hashname=self.hashname)
+        self.hash = None  # Spent.
+        return getattr(prng, method)
 
     def getstate(self):
-        """
-        Return a tuple that can be used to initialize a new TreePRNG.
-        (Not sure whether this survives across runs of Python.)
-        """
-        if self.prng:
-            return (None, self.prng.getstate(), False)
-        else:
-            return (self.hash, None, self.is_dict)
+        """ Disabled.  To get the state of this TreePRNG, follow its path. """
+        raise NotImplementedError()
 
     def setstate(self, *args, **kargs):
         """ Disabled.  To set the state, create a new TreePRNG. """
@@ -91,12 +107,74 @@ class TreePRNG(object):
 
     def jumpahead(self, *args, **kargs):
         """ 
-        Disabled.  For multiple random sequences under one node, do:
-        prng1 = node[id_1]
-        prng2 = node[id_2]
+        Disabled.  For multiple random sources under one node, do:
+        source1 = node[key1]
+        source2 = node[key2]
         ...
-        With a unique id for each sequence.
+        With a unique key for each source.
         """
+        raise NotImplementedError()
+
+
+class Hash_PRNG(random.Random):
+    """ hashlib-based PRNG used internally by the treeprng.TreePRNG class. """
+
+    def __init__(self, seed, hashname="sha1"):
+        """
+        Like random.Random.__init__(), but
+          o  seed is required, not optional.
+          o  If hasattr(seed, "hexdigest"), 
+                 assume seed is a hashlib object that we can modify.
+        """
+        self.hashname = hashname
+        self.seed(seed)
+
+    def seed(self, seed):
+        """
+        If hasattr(seed, "hexdigest"), 
+            assume seed is a hashlib object that we can modify.
+        else
+            create a hashlib.new(self.hashname) object 
+            and update with pickle_key(seed).
+        """
+        if hasattr(seed, "hexdigest"):
+            hash = seed
+        else:
+            hash = hashlib.new(self.hashname)
+            hash.update("s" + pickle_key(seed))
+        self.bits = long(hash.hexdigest(), 16)
+        self.nbits = hash.digest_size * 8
+        self.base_hash = hash
+        self.i = 1
+
+    def getrandbits(self, k):
+        # This is implemented so that if I want to implement .getstate() and
+        # .setstate() later, I can without changing the outputs of a sequence.
+        # The bits shift DOWN, new bits are added at the top.
+        while k > self.nbits:
+            hash = self.base_hash.copy()
+            hash.update("p" + pickle.dumps(self.i))
+            self.i += 1
+            self.bits += long(hash.hexdigest(), 16) << self.nbits
+            self.nbits += hash.digest_size * 8
+        result = self.bits & ((1 << k) - 1)
+        self.bits >>= k
+        self.nbits -= k
+        return result
+
+    def random(self):
+        return self.getrandbits(53) * 2 ** -53
+        
+    def jumpahead(self, *args, **kargs):
+        """ Raises NotImplementedError.  See help(RandomTreePRNG). """
+        raise NotImplementedError()
+
+    def getstate(self,  *args, **kargs):
+        """ Raises NotImplementedError.  See help(RandomTreePRNG). """
+        raise NotImplementedError()
+
+    def setstate(self,  *args, **kargs):
+        """ Raises NotImplementedError.  See help(RandomTreePRNG). """
         raise NotImplementedError()
 
 
