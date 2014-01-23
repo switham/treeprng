@@ -13,6 +13,7 @@ treeprng is available under a BSD license, whose full text is at
 CURRENT STATUS:
     2014-01-22: The code in the new no_mersenne branch seems to work.
                 The documentation in the wiki is pretty good.
+                Soon, no_mersenne should become MASTER.
 
 treeprng is "in alpha", meaning I would like feedback about the
 whole approach, the specific implementation, and the documentation.
