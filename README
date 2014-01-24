@@ -1,5 +1,5 @@
 treeprng README
-no_mersenne branch, alpha-test version 
+alpha-test version 
 
 Repeatable virtual trees of pseudorandom numbers.
 
@@ -11,9 +11,10 @@ treeprng is available under a BSD license, whose full text is at
     https://github.com/switham/treeprng/blob/master/LICENSE
 
 CURRENT STATUS:
+    2014-01-23: Merged no_mersenne back to master (fast-forward).
+                Made master the current branch on github
     2014-01-22: The code in the new no_mersenne branch seems to work.
                 The documentation in the wiki is pretty good.
-                Soon, no_mersenne should become MASTER.
 
 treeprng is "in alpha", meaning I would like feedback about the
 whole approach, the specific implementation, and the documentation.
