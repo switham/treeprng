@@ -144,17 +144,14 @@ class Hash_PRNG(random.Random):
             hash.update("s" + pickle_key(seed))
         # Note: this is the digest of the base_hash itself, while later
         # chunks of bits (if any) are based on updated copies.  That's okay,
-        # digest(b) doesn't let you predict digest(b + i).
-        # But, it does mean setstate() to the beginning is a special case.
+        # digest(base) doesn't let you predict digest(base + morebytes).
         self.bits = long(hash.hexdigest(), 16)
         self.nbits = hash.digest_size * 8
         self.base_hash = hash
         self.i = 1
 
     def getrandbits(self, k):
-        # This is implemented so that .getstate() and .setstate() can be
-        # implemented later without changing the outputs of a sequence.
-        #
+        """Return a positive int with k random bits."""
         # The bits shift DOWN, new bits are added at the top.
         while k > self.nbits:
             hash = self.base_hash.copy()
@@ -180,7 +177,6 @@ class Hash_PRNG(random.Random):
 
     def setstate(self,  *args, **kargs):
         """ Raises NotImplementedError.  See help(RandomTreePRNG). """
-        # Remember that the first chunk of bits is a special case.
         raise NotImplementedError()
 
 
