@@ -124,7 +124,7 @@ class Hash_PRNG(random.Random):
         Like random.Random.__init__(), but
           o  seed is required, not optional.
           o  If hasattr(seed, "hexdigest"), 
-                 assume seed is a hashlib object that we can modify.
+                 assume seed is a hashlib object that no one will update().
         """
         self.hashname = hashname
         self.seed(seed)
@@ -132,24 +132,29 @@ class Hash_PRNG(random.Random):
     def seed(self, seed):
         """
         If hasattr(seed, "hexdigest"), 
-            assume seed is a hashlib object that we can modify.
+            assume seed is a hashlib object that no one will update().
         else
             create a hashlib.new(self.hashname) object 
-            and update with pickle_key(seed).
+            and update with the pickled seed.
         """
         if hasattr(seed, "hexdigest"):
             hash = seed
         else:
             hash = hashlib.new(self.hashname)
             hash.update("s" + pickle_key(seed))
+        # Note: this is the digest of the base_hash itself, while later
+        # chunks of bits (if any) are based on updated copies.  That's okay,
+        # digest(b) doesn't let you predict digest(b + i).
+        # But, it does mean setstate() to the beginning is a special case.
         self.bits = long(hash.hexdigest(), 16)
         self.nbits = hash.digest_size * 8
         self.base_hash = hash
         self.i = 1
 
     def getrandbits(self, k):
-        # This is implemented so that if I want to implement .getstate() and
-        # .setstate() later, I can without changing the outputs of a sequence.
+        # This is implemented so that .getstate() and .setstate() can be
+        # implemented later without changing the outputs of a sequence.
+        #
         # The bits shift DOWN, new bits are added at the top.
         while k > self.nbits:
             hash = self.base_hash.copy()
@@ -175,6 +180,7 @@ class Hash_PRNG(random.Random):
 
     def setstate(self,  *args, **kargs):
         """ Raises NotImplementedError.  See help(RandomTreePRNG). """
+        # Remember that the first chunk of bits is a special case.
         raise NotImplementedError()
 
 
