@@ -29,10 +29,9 @@ class TreePRNG(object):
 
     def __init__(self, hashname="sha1", sequence_class=None):
         """
-        Produce the root of a tree in a "dict" state.
+        Produce the root of the tree in a "dict" state.
         hashname is one of the names in hashlib.algorithms.
-        sequence_class is (a subclass of) random.Random that sets the 
-        type of PRNG returned by .sequence().
+        sequence_class is the type of PRNG to be returned by .sequence().
             The default is treeprng.Hash_PRNG using hashname.
         """
         self.hashname = hashname
@@ -82,6 +81,19 @@ class TreePRNG(object):
             return prng_class(seed)
         else:
             return Hash_PRNG(seed, hashname=self.hashname)
+
+    def hash(self):
+        """ 
+        hash() can be used on an uncommitted or dict TreePRNG.
+        It commits self to be a dict.
+        """
+        assert self.hash, \
+            "Tried to use hash() after spent. See:\n" \
+            + TREEPRNG_DOC_URL + "#the-treeprng-life-cycle"
+        hash = self.hash.copy()
+        hash.update("h")
+        self.is_dict = True
+        return long(hash.hexdigest(), 16)
 
     def __getattr__(self, method):
         """
@@ -138,16 +150,15 @@ class Hash_PRNG(random.Random):
             and update with the pickled seed.
         """
         if hasattr(seed, "hexdigest"):
-            hash = seed
+            self.base_hash = seed
         else:
-            hash = hashlib.new(self.hashname)
-            hash.update("s" + pickle_key(seed))
+            self.base_hash = hashlib.new(self.hashname)
+            self.base_hash.update("s" + pickle_key(seed))
         # Note: this is the digest of the base_hash itself, while later
         # chunks of bits (if any) are based on updated copies.  That's okay,
         # digest(base) doesn't let you predict digest(base + morebytes).
-        self.bits = long(hash.hexdigest(), 16)
-        self.nbits = hash.digest_size * 8
-        self.base_hash = hash
+        self.bits = long(self.base_hash.hexdigest(), 16)
+        self.nbits = self.base_hash.digest_size * 8
         self.i = 1
 
     def getrandbits(self, k):
@@ -205,10 +216,9 @@ def pickle_key_massage(k):
     Members of classes we aren't sure of (e.g. sets, dicts) are left alone.
 
     Note: pickle_key_massage, pickle_key, and TreePRNG aren't meant to be
-    used with large objects as keys.  The hash can only absorb a certain
-    amount of, um, pseudo-entropy.  But the cost is only storage (of both 
-    the massaged and picked versions) which is recovered immediately, and 
-    time (while the hash digests the pickle).
+    used with large objects as keys.  But the cost is only temporary storage
+    (of both the massaged and picked versions) which is recovered 
+    immediately, and time (while the hash digests the pickle).
     """
     if type(k) == list:  # ==, not isinstance -- don't massage subclasses.
         for i, x in enumerate(k):
