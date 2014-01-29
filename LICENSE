@@ -21,5 +21,10 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+WARNING:You may have noticed that this code calls a cryptographic hash 
+function. That does NOT mean this code is secure. treeprng is NOT a 
+cryptographic pseudorandom number generator. Do NOT use it in a crypto 
+or security-sensitive application.
+
 The most up-to-date version of this license can be found at
    https://github.com/switham/treeprng/blob/master/LICENSE

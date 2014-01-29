@@ -10,6 +10,11 @@ https://github.com/switham/treeprng/wiki/Critique
 # treeprng is available under a BSD license, whose full text is at
 #   https://github.com/switham/treeprng/blob/master/LICENSE
 
+# WARNING:You may have noticed that this code calls a cryptographic hash 
+# function. That does NOT mean this code is secure. treeprng is NOT a 
+# cryptographic pseudorandom number generator. Do NOT use it in a crypto 
+# or security-sensitive application.
+
 import hashlib, random
 try:
     import cPickle as pickle
@@ -25,6 +30,11 @@ class TreePRNG(object):
     A virtual tree of nested Python dicts with pseudorandom numbers 
     at the bottom.  See the user guide:
         https://github.com/switham/treeprng/wiki/Documentation
+
+    WARNING:You may have noticed that this code calls a cryptographic
+    hash function. That does NOT mean this code is secure. treeprng is 
+    NOT a cryptographic pseudorandom number generator. Do NOT use it 
+    in a crypto or security-sensitive application.
     """
 
     def __init__(self, hashname="sha1", sequence_class=None):
@@ -36,11 +46,12 @@ class TreePRNG(object):
         """
         self.hashname = hashname
         self.sequence_class = sequence_class
-        self.hash = hashlib.new(hashname)
+        self.__hash = hashlib.new(hashname)
         self.is_dict = True # The root is always a dict.
 
     def __getitem__(self, key):
         """
+        t.__getitem__(key) <==> t[key]
         Given a TreePRNG t,
             t[key]
         Creates an uncommitted daughter TreePRNG object.
@@ -48,19 +59,19 @@ class TreePRNG(object):
         key can be any picklable object, but if you want repeatability 
         across runs of a program, see help(pickle_key).
         """
-        assert self.hash, \
+        assert self.__hash, \
             "Tried to use as a dict after spent. See:\n" \
             + TREEPRNG_DOC_URL + "#the-treeprng-life-cycle"
         self.is_dict = True
         
         child = copy.copy(self)
-        child.hash = self.hash.copy()
+        child.__hash = self.__hash.copy()
         child.is_dict = False
-        child.hash.update("k" + pickle_key(key))
+        child.__hash.update("k" + pickle_key(key))
         return child
 
     def __check_state(self, method):
-        assert self.hash, \
+        assert self.__hash, \
             "Tried to use ." + method + "() after spent. See:\n" \
             + TREEPRNG_DOC_URL + "#the-treeprng-life-cycle"
         assert not self.is_dict, \
@@ -74,8 +85,8 @@ class TreePRNG(object):
         self.sequence_class  (see __init__()).   self becomes spent.
         """
         self.__check_state("sequence")
-        seed = long(self.hash.hexdigest(), 16)
-        self.hash = None  # Spent.
+        seed = long(self.__hash.hexdigest(), 16)
+        self.__hash = None  # Spent.
         prng_class = prng_class or self.sequence_class
         if prng_class:
             return prng_class(seed)
@@ -87,10 +98,10 @@ class TreePRNG(object):
         hash() can be used on an uncommitted or dict TreePRNG.
         It commits self to be a dict.
         """
-        assert self.hash, \
+        assert self.__hash, \
             "Tried to use hash() after spent. See:\n" \
             + TREEPRNG_DOC_URL + "#the-treeprng-life-cycle"
-        hash = self.hash.copy()
+        hash = self.__hash.copy()
         hash.update("h")
         self.is_dict = True
         return long(hash.hexdigest(), 16)
@@ -101,8 +112,8 @@ class TreePRNG(object):
         method of the PRNG.  Then self becomes spent.
         """
         self.__check_state(method)
-        prng = Hash_PRNG(self.hash, hashname=self.hashname)
-        self.hash = None  # Spent.
+        prng = Hash_PRNG(self.__hash, hashname=self.hashname)
+        self.__hash = None  # Spent.
         return getattr(prng, method)
 
     def getstate(self):
