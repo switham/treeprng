@@ -10,7 +10,7 @@ https://github.com/switham/treeprng/wiki/Critique
 # treeprng is available under a BSD license, whose full text is at
 #   https://github.com/switham/treeprng/blob/master/LICENSE
 
-# WARNING:You may have noticed that this code calls a cryptographic hash 
+# WARNING: You may have noticed that this code calls a cryptographic hash 
 # function. That does NOT mean this code is secure. treeprng is NOT a 
 # cryptographic pseudorandom number generator. Do NOT use it in a crypto 
 # or security-sensitive application.
