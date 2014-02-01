@@ -17,7 +17,7 @@ treeprng is available under a BSD license, whose full text is at
 
 CURRENT STATUS:
     2014-01-23: Merged no_mersenne back to master (fast-forward).
-                Made master the current branch on github
+                Made master the current branch on github.
     2014-01-22: The code in the new no_mersenne branch seems to work.
                 The documentation in the wiki is pretty good.
 
